@@ -1,0 +1,110 @@
+---
+title: "Project 3: STATProject3 Tutorial"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{STATProject3 Tutorial}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(STATProject3)
+library(ggplot2)
+```
+
+## Introduction
+
+This package can be installed using either of the following:
+```{r eval=FALSE}
+library(STAT302package)
+devtools::install_github("thestrangelybrown/STAT302package", build_vignette = TRUE, build_opts = c())
+```
+The package contains 4 functions: `my_t_test`, `my_lm`, `my_knn_cv`, `my_rf_cv` which are inferential and/or predictive statistical methods. Their applications vary and examples on how to use them are demonstrated below.
+
+## Part 1: Using my_t_test
+
+```{r}
+# Test if mean is not equal to 60
+my_gapminder <- gapminder
+my_t_test(my_gapminder$lifeExp, "two.sided", 60)
+```
+
+Using a p-value cutoff of 0.05, we cannot reject the null hypothesis (mu = 60) as our t-test has a p-value of 0.09.
+
+```{r}
+# Test if mean is less than 60
+my_t_test(my_gapminder$lifeExp, "less", 60)
+```
+
+Using a p-value cutoff of 0.05, we can reject the null hypothesis (mu = 60) as our t-test has a p-value of 0.0466, so mu < 60.
+
+```{r}
+# Test if mean is greater than 60
+my_t_test(my_gapminder$lifeExp, "greater", 60)
+```
+
+Using a p-value cutoff of 0.05, we cannot reject the null hypothesis (mu = 60) as our t-test has a p-value of 0.95.
+
+## Part 2: Using my_lm
+
+```{r warning=FALSE}
+pred_lifeExp <- my_lm(formula = my_gapminder$lifeExp ~ my_gapminder$gdpPercap + my_gapminder$continent, data = my_gapminder)
+print(pred_lifeExp)
+```
+
+The gdpPercap coefficient `r pred_lifeExp[2,1]` represents how much each change in gdpPercap affects the predicted change in lifeExp. We accept this value as accurate because its associated p-value is `r pred_lifeExp[2,4]` which is less than 0.05.
+
+```{r}
+# FINDING fitted yhat
+# getting the matrix of the estimates value 
+my_estimates <- as.matrix(pred_lifeExp[,"estimate"])
+
+# fitting data into matrix to create x matrix
+x_mat <- model.matrix(lifeExp ~ gdpPercap + continent, my_gapminder)
+
+# matrix multiplication to get yhat 
+predicted <- x_mat %*% my_estimates
+my_df <- data.frame(actual = my_gapminder$lifeExp, predicted = predicted)
+
+# plot predicted vs actual
+ggplot(my_df, aes(x = actual, y = predicted)) + 
+  geom_point() +
+  labs(title = "Actual vs Predicted", 
+       x = "Actual Values", 
+       y = "Predicted Values") +
+  theme(plot.title = element_text(hjust = 0.5, 
+                                  face = "bold", 
+                                  size = 14))
+```
+
+Each predicted value varies in its relation to the actual values with the points forming noticeable horizontal lines on the plot. Hence our predicted model is not very good.
+
+## Part 3: Using my_knn_cv
+
+```{r}
+penguins <- tidyr::drop_na(my_penguins)
+data1 <- penguins[c("bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g")]
+cl1 <- penguins["species"]
+final <- matrix(0, ncol = 2, nrow = 10)
+
+
+for (i in 1:10) {
+  result = my_knn_cv(data1, cl1, i, 5)
+  final[i,1] = result$cv_err[1,2]
+}
+
+print(final)
+```
+
+## Part 4: Using my_rf_cv
+
+```{r}
+
+```
